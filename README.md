@@ -3,4 +3,5 @@
    |:-:| :-------------------: | :-------------------: | :-----------: |
    | 1 | astar | implement |     done      |
    | 2 | hybrid a star | implement |     fucking difficult      |
+   | 3 | dubins path | implement |     copied      |
    
