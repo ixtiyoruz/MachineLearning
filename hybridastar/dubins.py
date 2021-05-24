@@ -170,8 +170,7 @@ def dubins_cost(end_x, end_y, end_yaw, curvature):
 
 
 
-def dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
-                                     step_size):
+def dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,step_size):
     dx = end_x
     dy = end_y
     D = math.hypot(dx, dy)
@@ -192,13 +191,11 @@ def dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
         t, p, q, mode = planner(alpha, beta, d)
         if t is None:
             continue
-
-        cost = (abs(t) + abs(p) + abs(q))
+        cost =  (abs(t) + abs(p) +  abs(q))
         if best_cost > cost:
             bt, bp, bq, best_mode = t, p, q, mode
             best_cost = cost
     lengths = [bt, bp, bq]
-
     x_list, y_list, yaw_list, directions = generate_local_course(
         sum(lengths), lengths, best_mode, curvature, step_size)
 
@@ -236,11 +233,11 @@ def interpolate(ind, length, mode, max_curvature, origin_x, origin_y,
     return path_x, path_y, path_yaw, directions
 
 
-def dubins_path_planning(s_x, s_y, s_yaw, g_x, g_y, g_yaw, c, step_size=0.1):
+def dubins_path_planning(s_x, s_y, s_yaw, g_x, g_y, g_yaw, c, step_size=0.01):
     """
     Dubins path planner
 
-    input:
+    input:beta
         s_x x position of start point [m]
         s_y y position of start point [m]
         s_yaw yaw angle of start point [rad]
@@ -259,8 +256,7 @@ def dubins_path_planning(s_x, s_y, s_yaw, g_x, g_y, g_yaw, c, step_size=0.1):
     le_yaw = g_yaw - s_yaw
 
     lp_x, lp_y, lp_yaw, mode, lengths = dubins_path_planning_from_origin(
-        le_xy[0], le_xy[1], le_yaw, c, step_size)
-
+        le_xy[0], le_xy[1], le_yaw, c, step_size)    
     rot = Rot.from_euler('z', -s_yaw).as_matrix()[0:2, 0:2]
     converted_xy = np.stack([lp_x, lp_y]).T @ rot
     x_list = converted_xy[:, 0] + s_x
@@ -270,6 +266,87 @@ def dubins_path_planning(s_x, s_y, s_yaw, g_x, g_y, g_yaw, c, step_size=0.1):
     return x_list, y_list, yaw_list, mode, lengths
 
 
+def dubins_path_planning_costmap(s_x, s_y, s_yaw, g_x, g_y, g_yaw, c, step_size=0.01, costmap=None):
+    """
+    Dubins path planner
+
+    input:beta
+        s_x x position of start point [m]
+        s_y y position of start point [m]
+        s_yaw yaw angle of start point [rad]
+        g_x x position of end point [m]
+        g_y y position of end point [m]
+        g_yaw yaw angle of end point [rad]
+        c curvature [1/m]
+
+    """
+
+    g_x = g_x - s_x
+    g_y = g_y - s_y
+
+    l_rot = Rot.from_euler('z', s_yaw).as_matrix()[0:2, 0:2]
+    le_xy = np.stack([g_x, g_y]).T @ l_rot
+    le_yaw = g_yaw - s_yaw
+    rot = Rot.from_euler('z', -s_yaw).as_matrix()[0:2, 0:2]
+    curvature  = c
+    end_yaw  = le_yaw
+    # lp_x, lp_y, lp_yaw, mode, lengths = dubins_path_planning_from_origin(
+    #     le_xy[0], le_xy[1], le_yaw, c, step_size, costmap)
+    
+    dx = le_xy[0]
+    dy = le_xy[1]
+    D = math.hypot(dx, dy)
+    d = D * curvature
+
+    theta = mod2pi(math.atan2(dy, dx))
+    alpha = mod2pi(- theta)
+    beta = mod2pi(end_yaw - theta)
+
+    planners = [left_straight_left, right_straight_right, left_straight_right,
+                right_straight_left, right_left_right,
+                left_right_left]
+
+    best_cost = float("inf")
+    bt, bp, bq, best_mode = None, None, None, None
+
+    for planner in planners:
+        t, p, q, mode = planner(alpha, beta, d)
+        if t is None:
+            continue
+        # if(costmap is not None):
+        lengths_ = [t, p, q]
+        x_list_, y_list_, yaw_list_, _ = generate_local_course( sum(lengths_), lengths_, mode, curvature, step_size)
+        converted_xy_ = np.stack([x_list_, y_list_]).T @ rot
+        x_list_ = converted_xy_[:, 0] + s_x
+        y_list_ = converted_xy_[:, 1] + s_y
+        # print(inds.shape)
+        cost = 0
+        if(len(x_list_) > 0):
+            if( np.any(costmap[np.min(np.int32(x_list_)-3,0), np.int32(y_list_)] < 100)
+               or np.any(costmap[np.int32(x_list_)+3, np.int32(y_list_)] < 100)
+               or np.any(np.int32(x_list_) > costmap.shape[0]) or np.any(np.int32(x_list_) < 0) 
+               or np.any(np.int32(y_list_) > costmap.shape[1]) or np.any(np.int32(x_list_) < 0) ):
+                cost += 9999999
+            else:
+                cost += (255- np.mean(costmap[np.int32(x_list_), np.int32(y_list_)]))
+                
+        cost += (1 +  1000*abs(t + 1) + 1000* abs(p + 1) +  10 * abs(q + 1))
+        # if(mode)
+        if best_cost > cost:
+            bt, bp, bq, best_mode = t, p, q, mode
+            best_cost = cost
+    lengths = [bt, bp, bq]
+    if(cost >= 9999999):
+        return [], [], [],best_mode, cost
+    x_list, y_list, yaw_list, directions = generate_local_course(
+        sum(lengths), lengths, best_mode, curvature, step_size)
+    
+    converted_xy = np.stack([x_list, y_list]).T @ rot
+    x_list = converted_xy[:, 0] + s_x
+    y_list = converted_xy[:, 1] + s_y
+    yaw_list = [pi_2_pi(i_yaw + s_yaw) for i_yaw in yaw_list]
+
+    return x_list, y_list, yaw_list, mode, lengths
 
 def dubins_heuristics(start,goal, c):
     """
@@ -395,11 +472,11 @@ def main():
         end_x, end_y, end_yaw, curvature)
 
     if show_animation:
-        plt.plot(path_x, path_y, label="final course " + "".join(mode))
-
+        plt.plot(path_x, path_y, 'ro',label="final course " + "".join(mode))
+        
         # plotting
-        plot_arrow(start_x, start_y, start_yaw)
-        plot_arrow(end_x, end_y, end_yaw)
+        # plot_arrow(start_x, start_y, start_yaw)
+        # plot_arrow(end_x, end_y, end_yaw)
 
         plt.legend()
         plt.grid(True)
