@@ -12,4 +12,13 @@
    1. Hybrid star
    
    ![Figure_1](https://user-images.githubusercontent.com/24115387/119111985-9128e280-ba5e-11eb-8148-a5e0168e068d.png)
+   
+   
+   References:
 
+
+   |no |  name |  link  | 
+   |:-:| :-------------------: | :-------------------: |
+   | 1 | PythonRobotics | https://github.com/AtsushiSakai/PythonRobotics |
+   | 2 | Planning | http://planning.cs.uiuc.edu/ |
+   
