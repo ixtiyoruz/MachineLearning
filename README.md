@@ -2,7 +2,7 @@
    |no |  task link (if given) |  task type   | status |
    |:-:| :-------------------: | :-------------------: | :-----------: |
    | 1 | astar | implement |     done      |
-   | 2 | hybrid a star | implement |    almost ready      |
+   | 2 | hybrid a star | implement |    done     |
    | 3 | Dubins path | implement |     copied      |
    | 3 | Reed-Shepp path | implement |     starting      |
    
