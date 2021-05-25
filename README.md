@@ -3,8 +3,8 @@
    |:-:| :-------------------: | :-------------------: | :-----------: |
    | 1 | astar | implement |     done      |
    | 2 | hybrid a star | implement |    almost ready      |
-   | 3 | dubins path | implement |     copied      |
-   | 3 | reed shepp path | implement |     starting      |
+   | 3 | Dubins path | implement |     copied      |
+   | 3 | Reed-Shepp path | implement |     starting      |
    
    
    Results:
