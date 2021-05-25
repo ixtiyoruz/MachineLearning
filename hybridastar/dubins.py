@@ -11,7 +11,7 @@ from os import stat
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
-
+import sys
 show_animation = True
 
 
@@ -317,26 +317,34 @@ def dubins_path_planning_costmap(s_x, s_y, s_yaw, g_x, g_y, g_yaw, c, step_size=
         lengths_ = [t, p, q]
         x_list_, y_list_, yaw_list_, _ = generate_local_course( sum(lengths_), lengths_, mode, curvature, step_size)
         converted_xy_ = np.stack([x_list_, y_list_]).T @ rot
+        cost0 =  np.sum(np.hypot(x_list_, y_list_))
         x_list_ = converted_xy_[:, 0] + s_x
         y_list_ = converted_xy_[:, 1] + s_y
-        # print(inds.shape)
+        # print(np.max(y_list_), "----")
         cost = 0
         if(len(x_list_) > 0):
-            if( np.any(costmap[np.min(np.int32(x_list_)-3,0), np.int32(y_list_)] < 100)
-               or np.any(costmap[np.int32(x_list_)+3, np.int32(y_list_)] < 100)
-               or np.any(np.int32(x_list_) > costmap.shape[0]) or np.any(np.int32(x_list_) < 0) 
-               or np.any(np.int32(y_list_) > costmap.shape[1]) or np.any(np.int32(x_list_) < 0) ):
-                cost += 9999999
+            margin = 0
+            if(not( np.any((np.int32(x_list_) + margin >= costmap.shape[0]) | (np.int32(x_list_)-margin < 0)\
+               +(np.int32(y_list_)+margin >= costmap.shape[1]) | (np.int32(y_list_)-margin < 0) ))):
+                    if( np.any((costmap[np.int32(x_list_)-margin, np.int32(y_list_)-margin] < 255) | 
+                               (costmap[np.int32(x_list_)+margin, np.int32(y_list_)+margin] < 255))):
+                        cost += sys.maxsize
+                    else:
+                        cost += (255- np.mean(costmap[np.int32(x_list_), np.int32(y_list_)]))  + cost0
             else:
-                cost += (255- np.mean(costmap[np.int32(x_list_), np.int32(y_list_)]))
-                
-        cost += (1 +  1000*abs(t + 1) + 1000* abs(p + 1) +  10 * abs(q + 1))
+                cost += sys.maxsize
+        # for m,l in zip(mode,lengths_):
+        #     if(m  == 'S'):
+        #         cost +=  2*abs(l)
+        #     else:
+        #         cost +=  abs(l)
+        cost += 10*(abs(t) +abs(p) + abs(q))
         # if(mode)
         if best_cost > cost:
             bt, bp, bq, best_mode = t, p, q, mode
             best_cost = cost
     lengths = [bt, bp, bq]
-    if(cost >= 9999999):
+    if(cost >= sys.maxsize/2):
         return [], [], [],best_mode, cost
     x_list, y_list, yaw_list, directions = generate_local_course(
         sum(lengths), lengths, best_mode, curvature, step_size)
