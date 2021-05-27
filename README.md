@@ -4,7 +4,8 @@
    | 1 | astar | implement |     done      |
    | 2 | hybrid a star | implement |    done     |
    | 3 | Dubins path | implement |     copied      |
-   | 3 | Reed-Shepp path | implement |     starting      |
+   | 4 | Reed-Shepp path | implement |     starting      |
+   | 5 | Path smoothing | implement |     starting      |
    
    
    Results:
