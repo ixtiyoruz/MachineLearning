@@ -25,3 +25,12 @@
    | 1 | PythonRobotics | https://github.com/AtsushiSakai/PythonRobotics |
    | 2 | Planning | http://planning.cs.uiuc.edu/ |
    
+   
+   
+   Matplotlib tricks:
+   <pre>
+   in jupyter notebook you can get interactive 3d view by using this command.
+   <pre>
+   
+   '%matplotlib notebook'
+   
