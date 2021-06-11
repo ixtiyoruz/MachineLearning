@@ -28,9 +28,8 @@
    
    
    Matplotlib tricks:
-   <pre>
-   in jupyter notebook you can get interactive 3d view by using this command.
-   <pre>
    
-   '%matplotlib notebook'
-   
+   1. in jupyter notebook you can get interactive 3d view by using this command:
+   <pre>
+   %matplotlib notebook
+   <pre>
